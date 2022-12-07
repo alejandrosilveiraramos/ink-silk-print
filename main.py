@@ -47,7 +47,13 @@ def create_color(color: ColorRequest):
 # --- Read Color ---
 @app.get("/colors/{id}")
 def read_color(id: int):
-    return "Read Color"
+    #Create a new database Session
+    session = Session(bind=engine, expire_on_commit=False)
+    
+    #Get the Color item by the given ID
+    color = session.query(Color).get(id)
+    
+    return f"Read Color | Given ID: {color.id} | Name: {color.name} | Recipe: {color.recipe}"
     
 # --- Update Color ---
 @app.put("/colors/{id}")
