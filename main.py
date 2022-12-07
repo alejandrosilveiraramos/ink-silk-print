@@ -53,7 +53,12 @@ def read_color(id: int):
     #Get the Color item by the given ID
     color = session.query(Color).get(id)
     
+    #HTTP code Status to check if ID does'nt exist
+    if not color:
+        raise HTTPException(status_code=404, detail="Color ID doesn't exist")
+    #Returning (Color): ID, Name and Recipe 
     return f"Read Color | Given ID: {color.id} | Name: {color.name} | Recipe: {color.recipe}"
+
     
 # --- Update Color ---
 @app.put("/colors/{id}")
