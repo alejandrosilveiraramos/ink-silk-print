@@ -30,7 +30,6 @@ def create_color(color: ColorRequest):
     colordb = Color(name = color.name, recipe = color.recipe)
     
 
-    
     #Add it to session and commit it
     session.add(colordb)
     session.commit()
@@ -62,8 +61,14 @@ def read_color(id: int):
     
 # --- Update Color ---
 @app.put("/colors/{id}")
-def update_color(id: int):
-    return "Update Color"
+def update_color(id: int, name: str):
+    
+    # Create a new database session
+    session = Session(bind=engine, expire_on_commit=False)
+
+
+    return color
+ 
 
 # --- Delete Color ---
 @app.delete("/colors/{id}")
@@ -74,4 +79,13 @@ def delete_color(id: int):
 # --- Raed All Colors ---
 @app.get("/read-all-colors")
 def read_all_colors():
-    return "All Colors"
+    #Create a Database Session
+    session = Session(bind=engine, expire_on_commit=False) 
+    
+    #Get all Color Items
+    color_list = session.query(Color).all()
+    
+    #Close the session
+    session.close()
+    
+    return color_list
