@@ -89,7 +89,21 @@ def update_color(id: int, name: str):
 # --- Delete Color ---
 @app.delete("/colors/{id}")
 def delete_color(id: int):
-    return "Delete Color"
+    #Create a new Session Database
+    session = Session(bind=engine, autocommit=False)
+    
+    #Get the color by given ID
+    color = session.query(Color).get(id)
+    
+    # If color match Delete the Color by the given ID // Raise 404 Erro not exist
+    if color:
+        session.delete(color)
+        session.commit()
+        session.close()
+    else:
+        raise HTTPException(status_code=404, detail="The ID Color do not exist")
+    
+    return None
 
 
 # --- Raed All Colors ---
