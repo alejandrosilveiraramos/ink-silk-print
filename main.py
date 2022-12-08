@@ -66,6 +66,22 @@ def update_color(id: int, name: str):
     # Create a new database session
     session = Session(bind=engine, expire_on_commit=False)
 
+        # Get the Color item with the given id
+    color = session.query(Color).get(id)
+
+    # Update Color item with the given Name (if an item with the given id was found)
+    if color:
+        color.name = name
+        session.commit()
+    
+
+    # Close the session
+    session.close()
+
+    # Check if Color item with given id exists. If not, raise exception and return 404 not found response
+    if not color:
+        raise HTTPException(status_code=404, detail="The ID Color do not exist")
+    
 
     return color
  
