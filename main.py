@@ -1,9 +1,9 @@
 # --- Imports: ---
-from fastapi import FastAPI, status, HTTPException
-from sqlalchemy.orm import Session
+from fastapi import FastAPI, status, HTTPException, Depends
 from typing import List
+from sqlalchemy.orm import Session
 
-from database import engine, Base
+from database import engine, Base, SessionLocal
 
 from core.models import colorModelDB
 from core.schemas import colorSchema
@@ -13,40 +13,37 @@ Base.metadata.create_all(engine)
 
 app = FastAPI()
 
+# Helper function to get database session
+def get_session():
+    session = SessionLocal()
+    try:
+        yield session
+    finally:
+        session.close()
+
 @app.get("/")
 def root():
     return {'Massage: ROOT - Color System On'}
 
 # --- Create Color ---
-@app.post("/colors", response_model=colorSchema.Color, status_code=status.HTTP_201_CREATED)
-def create_color(color: colorSchema.ColorCreate):
-    
-    #Create a new database Session
-    session = Session(bind=engine, expire_on_commit=False)
+@app.post("/colors", response_model=colorSchema.Color,status_code=status.HTTP_201_CREATED)
+def create_color(color: colorSchema.ColorCreate, session: Session = Depends(get_session)):
     
     #Create an instance of the Color database model
-    colordb = colorSchema.Color(name = color.name, recipe = color.recipe)
+    colordb = colorModelDB.Color(name = color.name, recipe = color.recipe)
     
-
     #Add it to session and commit it
-    session.add(colordb)
+    session.add(colordb)    
     session.commit()
-    
-    #Grab the id given to the object from the database
-    id = colordb.id 
-    
-    #Close the session
-    session.close()
+    session.refresh(colordb)
     
     #Return the id, name and recipe
-    return f"Create Color | ID: {id} | NAME: {colordb.name} | RECIPE: {colordb.recipe}"
+    return colordb
 
 # --- Read Color ---
 
 @app.get("/colors/{id}", response_model = colorSchema.Color)
-def read_color(id: int):
-    #Create a new database Session
-    session = Session(bind=engine, expire_on_commit=False)
+def read_color(id: int, session: Session = Depends(get_session)):
     
     #Get the Color item by the given ID
     color = session.query(colorModelDB.Color).get(id)
@@ -60,22 +57,16 @@ def read_color(id: int):
     
 # --- Update Color ---
 @app.put("/colors/{id}")
-def update_color(id: int, name: str):
+def update_color(id: int, name: str, session: Session = Depends(get_session)):
     
-    # Create a new database session
-    session = Session(bind=engine, expire_on_commit=False)
-
-        # Get the Color item with the given id
+    # Get the Color item with the given id
     color = session.query(colorModelDB.Color).get(id)
 
     # Update Color item with the given Name (if an item with the given id was found)
     if color:
         color.name = name
         session.commit()
-    
 
-    # Close the session
-    session.close()
 
     # Check if Color item with given id exists. If not, raise exception and return 404 not found response
     if not color:
@@ -87,9 +78,7 @@ def update_color(id: int, name: str):
 
 # --- Delete Color ---
 @app.delete("/colors/{id}")
-def delete_color(id: int):
-    #Create a new Session Database
-    session = Session(bind=engine, autocommit=False)
+def delete_color(id: int, session: Session = Depends(get_session)):
     
     #Get the color by given ID
     color = session.query(colorModelDB.Color).get(id)
@@ -98,7 +87,6 @@ def delete_color(id: int):
     if color:
         session.delete(color)
         session.commit()
-        session.close()
     else:
         raise HTTPException(status_code=404, detail="The ID Color do not exist")
     
@@ -107,9 +95,7 @@ def delete_color(id: int):
 
 # --- Raed All Colors ---
 @app.get("/read-all-colors", response_model = List[colorSchema.Color])
-def read_all_colors():
-    #Create a Database Session
-    session = Session(bind=engine, expire_on_commit=False) 
+def read_all_colors(session: Session = Depends(get_session)):
     
     #Get all Color Items
     color_list = session.query(colorModelDB.Color).all()

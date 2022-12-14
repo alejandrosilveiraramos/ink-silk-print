@@ -23,4 +23,4 @@ class Color(Base):
     def validate_recipe(self, key, value):
         if value == '':
             raise HTTPException(status_code=204, detail="Item: recipe, cannot be Empty")
-  
+        return value
